@@ -68,6 +68,8 @@ func (info *HTMLInfo) toAbsoluteURL(u string) string {
 			if tu.Path[0] != '/' {
 				tu.Path = info.url.Path
 			}
+		} else if tu.Scheme == "" {
+			tu.Scheme = info.url.Scheme
 		}
 
 		return tu.String()
@@ -250,11 +252,11 @@ func (info *HTMLInfo) GenerateOembedFor(pageURL string) *oembed.Info {
 	baseInfo.Description = description
 
 	if len(info.ImageSrcURL) > 0 {
-		baseInfo.ThumbnailURL = info.ImageSrcURL
+		baseInfo.ThumbnailURL = info.toAbsoluteURL(info.ImageSrcURL)
 	}
 
 	if len(info.OGInfo.Images) > 0 {
-		baseInfo.ThumbnailURL = info.OGInfo.Images[0].URL
+		baseInfo.ThumbnailURL = info.toAbsoluteURL(info.OGInfo.Images[0].URL)
 		baseInfo.ThumbnailWidth = json.Number(strconv.FormatInt(int64(info.OGInfo.Images[0].Width), 10))
 		baseInfo.ThumbnailHeight = json.Number(strconv.FormatInt(int64(info.OGInfo.Images[0].Height), 10))
 	}
