@@ -14,7 +14,7 @@ import (
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"golang.org/x/net/html"
 
-	"github.com/mauidude/go-readability"
+	"github.com/dyatlov/go-readability"
 )
 
 // HTMLInfo contains information extracted from HTML page
@@ -26,15 +26,14 @@ type HTMLInfo struct {
 	AllowOembedFetching bool `json:"-"`
 	// If is' true parser will extract main page content from html
 	AllowMainContentExtraction bool `json:"-"`
-	// strip tags from main content or not
-	LeaveMainContentTags bool   `json:"-"`
-	Title                string `json:"title"`
-	Description          string `json:"description"`
-	CanonicalURL         string `json:"canonical_url"`
-	OembedJSONURL        string `json:"oembed_json_url"`
-	OembedXMLURL         string `json:"oembed_xml_url"`
-	FaviconURL           string `json:"favicon_url"`
-	ImageSrcURL          string `json:"image_src_url"`
+
+	Title         string `json:"title"`
+	Description   string `json:"description"`
+	CanonicalURL  string `json:"canonical_url"`
+	OembedJSONURL string `json:"oembed_json_url"`
+	OembedXMLURL  string `json:"oembed_xml_url"`
+	FaviconURL    string `json:"favicon_url"`
+	ImageSrcURL   string `json:"image_src_url"`
 	// Readability package is being used inside
 	MainContent string               `json:"main_content"`
 	OGInfo      *opengraph.OpenGraph `json:"opengraph"`
@@ -42,8 +41,10 @@ type HTMLInfo struct {
 }
 
 var (
-	cleanHTMLTagsRegex   = regexp.MustCompile(`<.*?>`)
-	replaceNewLinesRegex = regexp.MustCompile(`[\r\n]+`)
+	cleanHTMLTagsRegex    = regexp.MustCompile(`<.*?>`)
+	replaceNewLinesRegex  = regexp.MustCompile(`[\r\n]+`)
+	clearWhitespacesRegex = regexp.MustCompile(`\s+`)
+	getImageRegex         = regexp.MustCompile(`(?i)<img[^>]+?src=("|')?(.*?)("|'|\s|>)`)
 )
 
 // NewHTMLInfo return new instance of HTMLInfo
@@ -129,18 +130,13 @@ func (info *HTMLInfo) parseBody(n *html.Node) {
 		return
 	}
 
-	if !info.LeaveMainContentTags {
-		doc.WhitelistTags = []string{}
-	}
+	doc.WhitelistTags = []string{"div", "p", "img"}
+	doc.WhitelistAttrs["img"] = []string{"src", "title", "alt"}
 
 	content := doc.Content()
+	content = html.UnescapeString(content)
 
-	if !info.LeaveMainContentTags {
-		content = cleanHTMLTagsRegex.ReplaceAllString(content, "")
-		content = html.UnescapeString(content)
-	}
-
-	info.MainContent = strings.Trim(content, "\r\n ")
+	info.MainContent = strings.Trim(content, "\r\n\t ")
 }
 
 // Parse return information about page
@@ -237,7 +233,11 @@ func (info *HTMLInfo) GenerateOembedFor(pageURL string) *oembed.Info {
 		description = info.Description
 		if len(description) == 0 {
 			if len(info.MainContent) > 0 {
-				description = strings.Trim(replaceNewLinesRegex.ReplaceAllString(info.trimText(info.MainContent, 200), " "), " ")
+				description = cleanHTMLTagsRegex.ReplaceAllString(info.MainContent, " ")
+				description = replaceNewLinesRegex.ReplaceAllString(description, " ")
+				description = clearWhitespacesRegex.ReplaceAllString(description, " ")
+				description = strings.Trim(description, " ")
+				description = info.trimText(description, 200)
 			}
 		}
 	}
@@ -259,6 +259,14 @@ func (info *HTMLInfo) GenerateOembedFor(pageURL string) *oembed.Info {
 		baseInfo.ThumbnailURL = info.toAbsoluteURL(info.OGInfo.Images[0].URL)
 		baseInfo.ThumbnailWidth = json.Number(strconv.FormatInt(int64(info.OGInfo.Images[0].Width), 10))
 		baseInfo.ThumbnailHeight = json.Number(strconv.FormatInt(int64(info.OGInfo.Images[0].Height), 10))
+	}
+
+	if len(baseInfo.ThumbnailURL) == 0 && len(info.MainContent) > 0 {
+		// get first image from body
+		matches := getImageRegex.FindStringSubmatch(info.MainContent)
+		if len(matches) > 0 {
+			baseInfo.ThumbnailURL = info.toAbsoluteURL(matches[2])
+		}
 	}
 
 	// first we check if there is link to oembed resource
