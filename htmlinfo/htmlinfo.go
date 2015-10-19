@@ -66,7 +66,7 @@ func (info *HTMLInfo) toAbsoluteURL(u string) string {
 			tu.Host = info.url.Host
 			tu.User = info.url.User
 			tu.Opaque = info.url.Opaque
-			if tu.Path[0] != '/' {
+			if len(tu.Path) == 0 || tu.Path[0] != '/' {
 				tu.Path = info.url.Path
 			}
 		} else if tu.Scheme == "" {
