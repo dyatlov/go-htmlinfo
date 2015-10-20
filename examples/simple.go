@@ -20,8 +20,10 @@ func main() {
 
 	info := htmlinfo.NewHTMLInfo()
 
-	// if url is not provided it's fine too, just then we wont be able to fetch (and generate) oembed information
-	err = info.Parse(resp.Body, &u)
+	ct := resp.Header.Get("Content-Type")
+
+	// if url and contentType are not provided it's fine too, just then we wont be able to fetch (and generate) oembed information
+	err = info.Parse(resp.Body, &u, &ct)
 
 	if err != nil {
 		panic(err)

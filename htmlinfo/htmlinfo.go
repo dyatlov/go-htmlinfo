@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/html/charset"
+
 	"github.com/dyatlov/go-oembed/oembed"
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"golang.org/x/net/html"
@@ -142,14 +144,24 @@ func (info *HTMLInfo) parseBody(n *html.Node) {
 // Parse return information about page
 // @param s - contains page source
 // @params pageURL - contains URL from where the data was taken [optional]
+// @params contentType - contains Content-Type header value [optional]
 // if no url is given then parser won't attempt to parse oembed info
-func (info *HTMLInfo) Parse(s io.Reader, pageURL *string) error {
+func (info *HTMLInfo) Parse(s io.Reader, pageURL *string, contentType *string) error {
+	contentTypeStr := "text/html"
+	if contentType != nil && len(*contentType) > 0 {
+		contentTypeStr = *contentType
+	}
+	utf8s, err := charset.NewReader(s, contentTypeStr)
+	if err != nil {
+		return err
+	}
+
 	if pageURL != nil {
 		tu, _ := url.Parse(*pageURL)
 		info.url = tu
 	}
 
-	doc, err := html.Parse(s)
+	doc, err := html.Parse(utf8s)
 	if err != nil {
 		return err
 	}
