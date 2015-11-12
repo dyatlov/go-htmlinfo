@@ -19,6 +19,14 @@ import (
 	"github.com/dyatlov/go-readability"
 )
 
+type Icon struct {
+	URL        string `json:"url"`
+	Type       string `json:"type"`
+	Width      uint64 `json:"width"`
+	Height     uint64 `json:"height"`
+	IsScalable bool   `json:"is_scalable"`
+}
+
 // HTMLInfo contains information extracted from HTML page
 type HTMLInfo struct {
 	url *url.URL
@@ -29,13 +37,14 @@ type HTMLInfo struct {
 	// If is' true parser will extract main page content from html
 	AllowMainContentExtraction bool `json:"-"`
 
-	Title         string `json:"title"`
-	Description   string `json:"description"`
-	CanonicalURL  string `json:"canonical_url"`
-	OembedJSONURL string `json:"oembed_json_url"`
-	OembedXMLURL  string `json:"oembed_xml_url"`
-	FaviconURL    string `json:"favicon_url"`
-	ImageSrcURL   string `json:"image_src_url"`
+	Title         string  `json:"title"`
+	Description   string  `json:"description"`
+	CanonicalURL  string  `json:"canonical_url"`
+	OembedJSONURL string  `json:"oembed_json_url"`
+	OembedXMLURL  string  `json:"oembed_xml_url"`
+	FaviconURL    string  `json:"favicon_url"`
+	Icons         []*Icon `json:"icons"`
+	ImageSrcURL   string  `json:"image_src_url"`
 	// Readability package is being used inside
 	MainContent string               `json:"main_content"`
 	OGInfo      *opengraph.OpenGraph `json:"opengraph"`
@@ -47,6 +56,7 @@ var (
 	replaceNewLinesRegex  = regexp.MustCompile(`[\r\n]+`)
 	clearWhitespacesRegex = regexp.MustCompile(`\s+`)
 	getImageRegex         = regexp.MustCompile(`(?i)<img[^>]+?src=("|')?(.*?)("|'|\s|>)`)
+	sizesRegex            = regexp.MustCompile(`(\d+)[^\d]+(\d+)`) // some websites use crazy unicode chars between height and width
 )
 
 // NewHTMLInfo return new instance of HTMLInfo
@@ -81,6 +91,37 @@ func (info *HTMLInfo) toAbsoluteURL(u string) string {
 	return u
 }
 
+func (info *HTMLInfo) parseLinkIcon(attrs map[string]string) {
+	rels := strings.Split(attrs["rel"], " ")
+	url := info.toAbsoluteURL(attrs["href"])
+	sizesString, present := attrs["sizes"]
+	if !present {
+		sizesString = "0x0"
+	}
+	sizes := strings.Split(sizesString, " ")
+
+	for _, rel := range rels {
+		if rel == "shortcut" {
+			continue
+		} else if rel == "image_src" {
+			info.ImageSrcURL = url
+			continue
+		} else if rel == "icon" {
+			info.FaviconURL = url
+		}
+
+		for _, size := range sizes {
+			icon := &Icon{URL: url, Type: rel, IsScalable: (size == "any")}
+			matches := sizesRegex.FindStringSubmatch(size)
+			if len(matches) >= 3 {
+				icon.Height, _ = strconv.ParseUint(matches[1], 10, 64)
+				icon.Width, _ = strconv.ParseUint(matches[2], 10, 64)
+			}
+			info.Icons = append(info.Icons, icon)
+		}
+	}
+}
+
 func (info *HTMLInfo) parseHead(n *html.Node) {
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		if c.Type == html.ElementNode && c.Data == "title" {
@@ -96,10 +137,8 @@ func (info *HTMLInfo) parseHead(n *html.Node) {
 				info.OembedJSONURL = info.toAbsoluteURL(m["href"])
 			} else if m["rel"] == "alternate" && m["type"] == "application/xml+oembed" {
 				info.OembedXMLURL = info.toAbsoluteURL(m["href"])
-			} else if m["rel"] == "shortcut icon" {
-				info.FaviconURL = info.toAbsoluteURL(m["href"])
-			} else if m["rel"] == "image_src" {
-				info.ImageSrcURL = info.toAbsoluteURL(m["href"])
+			} else if strings.Contains(m["rel"], "icon") || strings.Contains(m["rel"], "image_src") {
+				info.parseLinkIcon(m)
 			}
 		} else if c.Type == html.ElementNode && c.Data == "meta" {
 			m := make(map[string]string)
