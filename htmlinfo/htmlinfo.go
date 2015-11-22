@@ -19,6 +19,15 @@ import (
 	"github.com/dyatlov/go-readability"
 )
 
+// TouchIcon contains all icons parsed from page header, including Apple touch icons
+type TouchIcon struct {
+	URL        string `json:"url"`
+	Type       string `json:"type"`
+	Width      uint64 `json:"width"`
+	Height     uint64 `json:"height"`
+	IsScalable bool   `json:"is_scalable"`
+}
+
 // HTMLInfo contains information extracted from HTML page
 type HTMLInfo struct {
 	url *url.URL
@@ -28,17 +37,17 @@ type HTMLInfo struct {
 	AllowOembedFetching bool `json:"-"`
 	// If it's true parser will extract main page content from html
 	AllowMainContentExtraction bool `json:"-"`
-
 	// We'll forward it to Oembed' fetchOembed method
 	AcceptLanguage string `json:"-"`
 
-	Title         string `json:"title"`
-	Description   string `json:"description"`
-	CanonicalURL  string `json:"canonical_url"`
-	OembedJSONURL string `json:"oembed_json_url"`
-	OembedXMLURL  string `json:"oembed_xml_url"`
-	FaviconURL    string `json:"favicon_url"`
-	ImageSrcURL   string `json:"image_src_url"`
+	Title         string       `json:"title"`
+	Description   string       `json:"description"`
+	CanonicalURL  string       `json:"canonical_url"`
+	OembedJSONURL string       `json:"oembed_json_url"`
+	OembedXMLURL  string       `json:"oembed_xml_url"`
+	FaviconURL    string       `json:"favicon_url"`
+	TouchIcons    []*TouchIcon `json:"touch_icons"`
+	ImageSrcURL   string       `json:"image_src_url"`
 	// Readability package is being used inside
 	MainContent string               `json:"main_content"`
 	OGInfo      *opengraph.OpenGraph `json:"opengraph"`
@@ -50,6 +59,8 @@ var (
 	replaceNewLinesRegex  = regexp.MustCompile(`[\r\n]+`)
 	clearWhitespacesRegex = regexp.MustCompile(`\s+`)
 	getImageRegex         = regexp.MustCompile(`(?i)<img[^>]+?src=("|')?(.*?)("|'|\s|>)`)
+	linkWithIconsRegex    = regexp.MustCompile(`\b(icon|image_src)\b`)
+	sizesRegex            = regexp.MustCompile(`(\d+)[^\d]+(\d+)`) // some websites use crazy unicode chars between height and width
 )
 
 // NewHTMLInfo return new instance of HTMLInfo
@@ -84,6 +95,39 @@ func (info *HTMLInfo) toAbsoluteURL(u string) string {
 	return u
 }
 
+func (info *HTMLInfo) appendTouchIcons(url string, rel string, sizes []string) {
+	for _, size := range sizes {
+		icon := &TouchIcon{URL: url, Type: rel, IsScalable: (size == "any")}
+		matches := sizesRegex.FindStringSubmatch(size)
+		if len(matches) >= 3 {
+			icon.Height, _ = strconv.ParseUint(matches[1], 10, 64)
+			icon.Width, _ = strconv.ParseUint(matches[2], 10, 64)
+		}
+		info.TouchIcons = append(info.TouchIcons, icon)
+	}
+}
+
+func (info *HTMLInfo) parseLinkIcon(attrs map[string]string) {
+	rels := strings.Split(attrs["rel"], " ")
+	url := info.toAbsoluteURL(attrs["href"])
+	sizesString, present := attrs["sizes"]
+	if !present {
+		sizesString = "0x0"
+	}
+	sizes := strings.Split(sizesString, " ")
+
+	for _, rel := range rels {
+		if rel == "image_src" {
+			info.ImageSrcURL = url
+		} else if rel == "icon" {
+			info.FaviconURL = url
+			info.appendTouchIcons(url, rel, sizes)
+		} else if rel == "apple-touch-icon" || rel == "apple-touch-icon-precomposed" {
+			info.appendTouchIcons(url, rel, sizes)
+		}
+	}
+}
+
 func (info *HTMLInfo) parseHead(n *html.Node) {
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		if c.Type == html.ElementNode && c.Data == "title" {
@@ -99,10 +143,8 @@ func (info *HTMLInfo) parseHead(n *html.Node) {
 				info.OembedJSONURL = info.toAbsoluteURL(m["href"])
 			} else if m["rel"] == "alternate" && m["type"] == "application/xml+oembed" {
 				info.OembedXMLURL = info.toAbsoluteURL(m["href"])
-			} else if m["rel"] == "shortcut icon" {
-				info.FaviconURL = info.toAbsoluteURL(m["href"])
-			} else if m["rel"] == "image_src" {
-				info.ImageSrcURL = info.toAbsoluteURL(m["href"])
+			} else if linkWithIconsRegex.MatchString(m["rel"]) {
+				info.parseLinkIcon(m)
 			}
 		} else if c.Type == html.ElementNode && c.Data == "meta" {
 			m := make(map[string]string)
