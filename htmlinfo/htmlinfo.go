@@ -26,8 +26,11 @@ type HTMLInfo struct {
 	Client *http.Client `json:"-"`
 	// If it's true then parser will fetch oembed data from oembed url if possible
 	AllowOembedFetching bool `json:"-"`
-	// If is' true parser will extract main page content from html
+	// If it's true parser will extract main page content from html
 	AllowMainContentExtraction bool `json:"-"`
+
+	// We'll forward it to Oembed' fetchOembed method
+	AcceptLanguage string `json:"-"`
 
 	Title         string `json:"title"`
 	Description   string `json:"description"`
@@ -51,7 +54,7 @@ var (
 
 // NewHTMLInfo return new instance of HTMLInfo
 func NewHTMLInfo() *HTMLInfo {
-	info := &HTMLInfo{AllowOembedFetching: true, AllowMainContentExtraction: true, OGInfo: opengraph.NewOpenGraph()}
+	info := &HTMLInfo{AllowOembedFetching: true, AllowMainContentExtraction: true, OGInfo: opengraph.NewOpenGraph(), AcceptLanguage: "en-us"}
 	return info
 }
 
@@ -193,7 +196,7 @@ func (info *HTMLInfo) Parse(s io.Reader, pageURL *string, contentType *string) e
 		}
 
 		oiItem := &oembed.Item{EndpointURL: info.OembedJSONURL, ProviderName: siteName, ProviderURL: siteURL, IsEndpointURLComplete: true}
-		oi, _ := oiItem.FetchOembed(*pageURL, info.Client)
+		oi, _ := oiItem.FetchOembedWithLocale(*pageURL, info.Client, info.AcceptLanguage)
 
 		if oi != nil && oi.Status < 300 {
 			info.OembedInfo = oi
