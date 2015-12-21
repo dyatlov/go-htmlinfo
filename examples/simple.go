@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	u := "http://techcrunch.com/2015/09/09/ipad-pro-coming-in-november-pricing-starts-at-799/"
+	u := "http://techcrunch.com/2010/11/02/365-days-10-million-3-rounds-2-companies-all-with-5-magic-slides/"
 
 	resp, err := http.Get(u)
 
@@ -19,6 +19,7 @@ func main() {
 	defer resp.Body.Close()
 
 	info := htmlinfo.NewHTMLInfo()
+	info.AllowOembedFetching = true
 
 	ct := resp.Header.Get("Content-Type")
 

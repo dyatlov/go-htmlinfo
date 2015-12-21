@@ -239,7 +239,6 @@ func (info *HTMLInfo) Parse(s io.Reader, pageURL *string, contentType *string) e
 
 		oiItem := &oembed.Item{EndpointURL: info.OembedJSONURL, ProviderName: siteName, ProviderURL: siteURL, IsEndpointURLComplete: true}
 		oi, _ := oiItem.FetchOembedWithLocale(*pageURL, info.Client, info.AcceptLanguage)
-
 		if oi != nil && oi.Status < 300 {
 			info.OembedInfo = oi
 		}
@@ -314,8 +313,8 @@ func (info *HTMLInfo) GenerateOembedFor(pageURL string) *oembed.Info {
 
 	if len(info.OGInfo.Images) > 0 {
 		baseInfo.ThumbnailURL = info.toAbsoluteURL(info.OGInfo.Images[0].URL)
-		baseInfo.ThumbnailWidth = json.Number(strconv.FormatInt(int64(info.OGInfo.Images[0].Width), 10))
-		baseInfo.ThumbnailHeight = json.Number(strconv.FormatInt(int64(info.OGInfo.Images[0].Height), 10))
+		baseInfo.ThumbnailWidth = info.OGInfo.Images[0].Width
+		baseInfo.ThumbnailHeight = info.OGInfo.Images[0].Height
 	}
 
 	if len(baseInfo.ThumbnailURL) == 0 && len(info.MainContent) > 0 {
