@@ -42,6 +42,7 @@ type HTMLInfo struct {
 
 	Title         string       `json:"title"`
 	Description   string       `json:"description"`
+	Author        string       `json:"author"`
 	CanonicalURL  string       `json:"canonical_url"`
 	OembedJSONURL string       `json:"oembed_json_url"`
 	OembedXMLURL  string       `json:"oembed_xml_url"`
@@ -154,6 +155,8 @@ func (info *HTMLInfo) parseHead(n *html.Node) {
 
 			if m["name"] == "description" {
 				info.Description = m["content"]
+			} else if m["name"] == "author" {
+				info.Author = m["content"]
 			}
 
 			info.OGInfo.ProcessMeta(m)
