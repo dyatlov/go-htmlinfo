@@ -57,6 +57,7 @@ _Info:_
 {
     "title": "iPad Pro Coming In November, Pricing Starts At $799  |  TechCrunch",
     "description": "Apple unveiled its new iPad Pro today. If you're wondering when you can get your hands on it, and how much it will cost, here you go: Apple says the iPad Pro..",
+    "author_name": "Anthony Ha",
     "canonical_url": "http://techcrunch.com/2015/09/09/ipad-pro-coming-in-november-pricing-starts-at-799/",
     "oembed_json_url": "https://public-api.wordpress.com/oembed/1.0/?format=json\u0026url=http%3A%2F%2Ftechcrunch.com%2F2015%2F09%2F09%2Fipad-pro-coming-in-november-pricing-starts-at-799%2F\u0026for=wpcom-auto-discovery",
     "oembed_xml_url": "https://public-api.wordpress.com/oembed/1.0/?format=xml\u0026url=http%3A%2F%2Ftechcrunch.com%2F2015%2F09%2F09%2Fipad-pro-coming-in-november-pricing-starts-at-799%2F\u0026for=wpcom-auto-discovery",
