@@ -38,7 +38,7 @@ func main() {
 	info := htmlinfo.NewHTMLInfo()
 
 	// if url can be nil too, just then we won't be able to fetch (and generate) oembed information
-	err = info.Parse(resp.Body, &u)
+	err = info.Parse(resp.Body, &u, nil)
 
 	if err != nil {
 		panic(err)
@@ -57,10 +57,24 @@ _Info:_
 {
     "title": "iPad Pro Coming In November, Pricing Starts At $799  |  TechCrunch",
     "description": "Apple unveiled its new iPad Pro today. If you're wondering when you can get your hands on it, and how much it will cost, here you go: Apple says the iPad Pro..",
+    "author": "Anthony Ha",
     "canonical_url": "http://techcrunch.com/2015/09/09/ipad-pro-coming-in-november-pricing-starts-at-799/",
     "oembed_json_url": "https://public-api.wordpress.com/oembed/1.0/?format=json\u0026url=http%3A%2F%2Ftechcrunch.com%2F2015%2F09%2F09%2Fipad-pro-coming-in-november-pricing-starts-at-799%2F\u0026for=wpcom-auto-discovery",
     "oembed_xml_url": "https://public-api.wordpress.com/oembed/1.0/?format=xml\u0026url=http%3A%2F%2Ftechcrunch.com%2F2015%2F09%2F09%2Fipad-pro-coming-in-november-pricing-starts-at-799%2F\u0026for=wpcom-auto-discovery",
     "favicon_url": "https://s0.wp.com/wp-content/themes/vip/techcrunch-2013/assets/images/favicon.ico",
+    "touch_icons": [{
+      { url: 'https://s0.wp.com/wp-content/themes/vip/techcrunch-2013/assets/images/favicon.ico',
+       type: 'icon',
+       width: 0,
+       height: 0,
+       is_scalable: false },
+     { url: 'https://s0.wp.com/wp-content/themes/vip/techcrunch-2013/assets/images/homescreen_TCIcon.png',
+       type: 'apple-touch-icon-precomposed',
+       width: 0,
+       height: 0,
+       is_scalable: false },
+       // ...
+    ],
     "image_src_url": "",
     "main_content": "Apple unveiled its new iPad Pro today. If you’re wondering when you can get your hands on it, and how much it will cost, here you go: Apple says the iPad Pro and related accessories will be available in November.\nPricing will start at $799 with 32 gigabytes of memory and WiFi-only connectivity, with a $949 price tag for 128 GB, and $1,079 for 128 GB and a cellular connection. If you want the company’s new stylus, dubbed the Apple Pencil, that’ll cost you $99, and the Smart Keyboard will cost $169.\nThat may seem pretty pricey compared to other iPads — in fact, Apple said today that it’s dropping pricing on its iPad Mini 2, which its considers to be the entry-level iPad, to $269. What you’re paying for (among other things) is a 12.9-inch screen with resolution of 2,732 x 2,048 pixels, Apple’s A9X chip and four speakers.\nAnd, as the name and on-stage demos suggest, Apple seems to be pitching this for enterprise use and productivity, not for casual use.\n\t\t\t\n\t\t\t\t\n\t\t\t\tSay Hello To The Brand-New iPad Pro\n\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t",
     "opengraph": {
