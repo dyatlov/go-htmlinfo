@@ -132,7 +132,9 @@ func (info *HTMLInfo) parseLinkIcon(attrs map[string]string) {
 func (info *HTMLInfo) parseHead(n *html.Node) {
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		if c.Type == html.ElementNode && c.Data == "title" {
-			info.Title = c.FirstChild.Data
+			if c.FirstChild != nil {
+				info.Title = c.FirstChild.Data
+			}
 		} else if c.Type == html.ElementNode && c.Data == "link" {
 			m := make(map[string]string)
 			for _, a := range c.Attr {
