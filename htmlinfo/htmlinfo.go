@@ -243,7 +243,7 @@ func (info *HTMLInfo) Parse(s io.Reader, pageURL *string, contentType *string) e
 		}
 
 		oiItem := &oembed.Item{EndpointURL: info.OembedJSONURL, ProviderName: siteName, ProviderURL: siteURL, IsEndpointURLComplete: true}
-		oi, _ := oiItem.FetchOembedWithLocale(*pageURL, info.Client, info.AcceptLanguage)
+		oi, _ := oiItem.FetchOembed(oembed.Options{URL: *pageURL, Client: info.Client, AcceptLanguage: info.AcceptLanguage})
 		if oi != nil && oi.Status < 300 {
 			info.OembedInfo = oi
 		}
