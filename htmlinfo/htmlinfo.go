@@ -254,10 +254,11 @@ func (info *HTMLInfo) Parse(s io.Reader, pageURL *string, contentType *string) e
 
 func (info *HTMLInfo) trimText(text string, maxLen int) string {
 	var numRunes = 0
-	for index := range text {
+	runes := []rune(text)
+	for index := range runes {
 		numRunes++
 		if numRunes > maxLen {
-			return text[:index-3] + "..."
+			return string(runes[:index-3]) + "..."
 		}
 	}
 	return text
