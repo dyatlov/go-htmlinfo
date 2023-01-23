@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -8,6 +9,7 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
 	u := "http://techcrunch.com/2010/11/02/365-days-10-million-3-rounds-2-companies-all-with-5-magic-slides/"
 
 	resp, err := http.Get(u)
@@ -24,7 +26,7 @@ func main() {
 	ct := resp.Header.Get("Content-Type")
 
 	// if url and contentType are not provided it's fine too, just then we wont be able to fetch (and generate) oembed information
-	err = info.Parse(resp.Body, &u, &ct)
+	err = info.ParseWithContext(ctx, resp.Body, &u, &ct)
 
 	if err != nil {
 		panic(err)
