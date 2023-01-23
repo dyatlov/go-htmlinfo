@@ -2,6 +2,7 @@ package htmlinfo
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -197,6 +198,16 @@ func (info *HTMLInfo) parseBody(n *html.Node) {
 // @params contentType - contains Content-Type header value [optional]
 // if no url is given then parser won't attempt to parse oembed info
 func (info *HTMLInfo) Parse(s io.Reader, pageURL *string, contentType *string) error {
+	return info.ParseWithContext(context.Background(), s, pageURL, contentType)
+}
+
+// ParseWithContext return information about page
+// @params ctx - context for embed requests
+// @param s - contains page source
+// @params pageURL - contains URL from where the data was taken [optional]
+// @params contentType - contains Content-Type header value [optional]
+// if no url is given then parser won't attempt to parse oembed info
+func (info *HTMLInfo) ParseWithContext(ctx context.Context, s io.Reader, pageURL *string, contentType *string) error {
 	contentTypeStr := "text/html"
 	if contentType != nil && len(*contentType) > 0 {
 		contentTypeStr = *contentType
@@ -243,7 +254,14 @@ func (info *HTMLInfo) Parse(s io.Reader, pageURL *string, contentType *string) e
 		}
 
 		oiItem := &oembed.Item{EndpointURL: info.OembedJSONURL, ProviderName: siteName, ProviderURL: siteURL, IsEndpointURLComplete: true}
-		oi, _ := oiItem.FetchOembed(oembed.Options{URL: *pageURL, Client: info.Client, AcceptLanguage: info.AcceptLanguage})
+
+		oembedOptions := oembed.Options{
+			URL:            *pageURL,
+			Client:         info.Client,
+			AcceptLanguage: info.AcceptLanguage,
+		}
+
+		oi, _ := oiItem.FetchOembedWithContext(ctx, oembedOptions)
 		if oi != nil && oi.Status < 300 {
 			info.OembedInfo = oi
 		}
